@@ -1,9 +1,10 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 //file upload module
 const multer = require('multer');
-const upload = multer({preservePath:true});
+const upload = multer({ preservePath: true });
 
 var app = express();
 app.use(express.static(path.join(process.cwd(), '/public')));
@@ -30,10 +31,8 @@ app.get('/', (req, res) => {
 
 app.post('/hash', (req, res) => {
     const hash = req.body.hash;
-    let fileName = path.join(process.cwd(), 'storage', hash+'.sample');
-    const db = require('better-sqlite3')('./database/pe_metadata.db3', { verbose: console.log });
-    var query = db.prepare('select id from meta_data where hash = ?').bind(hash);
-    const val = query.get();
+    let fileName = path.join(process.cwd(), 'storage', hash + '.sample');
+    var val = isHashInDb(hash);
     if (val) {
         res.status(200).send(
             {
@@ -49,7 +48,6 @@ app.post('/hash', (req, res) => {
             });
 
     }
-    db.close();
 });
 
 app.post('/upload', upload.single('sample'), function (req, res, next) {
@@ -57,12 +55,26 @@ app.post('/upload', upload.single('sample'), function (req, res, next) {
     let fileName = req.file.originalname;
     let fileSize = req.file.size;
     let directory = req.body.filePath;
-    let physicalFileName = path.join(process.cwd(), 'storage', hash+ '.sample');
-    if (hash === undefined || fileName === undefined || fileSize === undefined || directory === undefined){
+    let physicalFileName = path.join(process.cwd(), 'storage', hash + '.sample');
+    if (hash === undefined || fileName === undefined || fileSize === undefined || directory === undefined) {
         res.status(403).send('Invalid data');
         res.end();
         return;
     }
+
+    let { isPE, hexHash } = checkBuffer(req.file.buffer);
+    if (!isPE) {
+        res.status(403).send('Invalid data');
+        res.end();
+        return;
+    }
+
+    if (hexHash !== hash || isHashInDb(hash)) {
+        res.status(403).send('Invalid data');
+        res.end();
+        return;
+    }
+
     fs.writeFileSync(physicalFileName, req.file.buffer);
     const db = require('better-sqlite3')('./database/pe_metadata.db3', { verbose: console.log });
     var s = 'insert into "meta_data" (hash, filename, filesize, directory) values (?, ?, ?, ?);';
@@ -70,7 +82,17 @@ app.post('/upload', upload.single('sample'), function (req, res, next) {
     var result = query.run(hash, fileName, fileSize, directory);
     console.log(result);
     db.close();
+    res.status(200).redirect('/');
+    res.end();
 });
+
+function isHashInDb(hash) {
+    const localDb = require('better-sqlite3')('./database/pe_metadata.db3', { verbose: console.log });
+    var query = localDb.prepare('select id from meta_data where hash = ?').bind(hash);
+    const val = query.get();
+    localDb.close();
+    return val;
+}
 
 app.get("*", (req, res) => {
     res.setHeader('Content-type', 'text/html');
@@ -84,5 +106,27 @@ app.get("*", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running at: http://127.0.0.1:${PORT}`);
 });
+
+function checkBuffer(buffer) {
+    var array = new Uint8Array(buffer);
+    const hash = crypto.createHash('sha256');
+    hash.update(array);
+    const hexHash = hash.digest('hex');
+    var mzSign = 0;
+    var peSign = 0;
+    // we check here:
+    // if the file is bigger than 130 bytes
+    var isBigEnough = array.length > 130;
+    if (isBigEnough) {
+        // if it is starting with 'MZ' (Mark Zbikowski) 
+        mzSign = array[0] * 0x100 + array[1];
+        var peLocation = array[0x3c] + (array[0x3d] * 0x100) + (array[0x3e] * 0x10000) + (array[0x3f] * 0x1000000);
+        peSign = (array[peLocation] << 24) + (array[peLocation + 1] << 16) + (array[peLocation + 2] << 8) + (array[peLocation + 3]);
+    }
+    //console.log(peSign.toString(16));
+    // if it has MZ and PE marks (http://www.phreedom.org/research/tinype/)
+    var isPE = isBigEnough && mzSign == 0x4d5a && peSign == 0x50450000;
+    return { isPE, hexHash };
+}
 
 module.exports = app;

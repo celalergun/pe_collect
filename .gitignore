@@ -35,11 +35,16 @@ bower_components
 # node-waf configuration
 .lock-wscript
 
+# sqlite db3 files
+.db3
+
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
 # Dependency directories
 node_modules/
+storage/
+database/
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)
@@ -128,3 +133,4 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+database/pe_metadata.db3

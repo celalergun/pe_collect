@@ -20,22 +20,25 @@
     <div class="container">
         <img src="/images/malwarebytes-main-logo.png">
         <h1 style="margin: 20px 0;">Welcome to MalwareBytes PE Collection Service</h1>
-        <form id="fileUploadForm" method="post" enctype="multipart/form-data" >
+        <form id="fileUploadForm" method="post" enctype="multipart/form-data" action="/upload">
+            <input type="hidden" name="hashHex" id="hashHex" value="">
+            <input type="hidden" name="filePath" id="filePath" value="">
             <div class="input-group mb-3">
-                <input type="file" id="fileInput" class="form-control" placeholder="Upload file" aria-label="Upload"
-                    aria-describedby="basic-addon1">
+                <input type="file" id="fileInput" name="sample" class="form-control" placeholder="Upload file"
+                    aria-label="Upload" aria-describedby="basic-addon1">
             </div>
             <button id="btnSubmit" type="submit" class="btn btn-primary" disabled>Upload</button>
         </form>
         <div class="row" style="margin: 20px 0; padding: 10px;">
             <div class="col-md-4" id="ctype" style="border: solid 1px;">File type</div>
-            <div class="col-md-8" id="hash"  style="border: solid 1px;">File hash</div>
+            <div class="col-md-8" id="hash" style="border: solid 1px;">File hash</div>
         </div>
         <div class="row" style="margin: 20px 0; padding: 10px;">
             <div class="col-md-4" id="exists" style="border: solid 1px;"></div>
-            <div class="col-md-8" id="status"  style="border: solid 1px;"></div>
+            <div class="col-md-8" id="status" style="border: solid 1px;"></div>
         </div>
     </div>
     <script type="text/javascript" src="/scripts/client.js"></script>
 </body>
+
 </html>

@@ -64,6 +64,7 @@ async function readAndCheckFile(buffer) {
     return { isPE, hashHex };
 }
 
+//https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
 async function postData(url = '', data = {}) {
     const response = await fetch(url, {
         method: 'POST',

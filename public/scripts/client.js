@@ -20,7 +20,7 @@ function setEvents() {
         
             var fileType = 'PE File';
 
-            postData('/hash', { hash: hashHex })
+            postData('/hash', { hash: hashHex, fileName: reader.fileName, fileSize:reader.fileSize, directory:reader.directory })
                 .then(data => {
                     setGui(isPE, fileType, data.exists, data.status);
                 })
@@ -30,16 +30,14 @@ function setEvents() {
 
         };
         reader.readAsArrayBuffer(this.files[0]);
+        document.getElementById('filePath').value = this.files[0].webkitRelativePath;
     }, false);
 
-    document.getElementById('fileUploadForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        console.log("File has been sent");
-    }, false);
 }
 
 function displayHash(hashHex) {
     document.getElementById('hash').innerText = hashHex;
+    document.getElementById('hashHex').value = hashHex;
 }
 
 async function readAndCheckFile(buffer) {

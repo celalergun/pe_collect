@@ -6,10 +6,10 @@ document.addEventListener('readystatechange', (event) => {
 });
 
 function setEvents() {
-    document.getElementById('myFile').addEventListener('change', function () {
+    document.getElementById('fileInput').addEventListener('change', function () {
         console.log("File has been loaded");
         var reader = new FileReader();
-        reader.onload = async function() {
+        reader.onload = async function () {
             var buffer = this.result;
             var array = new Uint8Array(buffer);
             console.log(array[0], "-", array[1]);
@@ -21,22 +21,30 @@ function setEvents() {
             // we check here:
             // if the file is bigger than 130 bytes
             var isBigEnough = array.length > 130;
-            // if it is starting with 'MZ' (Mark Zbikowski) 
-            var mzSign = isBigEnough ? array[0] * 0x100 + array[1] : 0;
-            // if it has PE mark (http://www.phreedom.org/research/tinype/)
-            var peSign = isBigEnough ? (array[0x80] * 0x1000000) + (array[0x81] * 0x10000) + (array[0x82] * 0x100) + array[0x83] : 0;
-            //console.log(peSign.toString(16));
-            if (isBigEnough && mzSign == 0x4d5a && peSign == 0x50450000){
-                document.getElementById('ctype').innerText = "File is PE";
+            var mzSign = 0;
+            var peSign = 0;
+            if (isBigEnough) {
+                // if it is starting with 'MZ' (Mark Zbikowski) 
+                mzSign = array[0] * 0x100 + array[1];
+                var peLocation = array[0x3c] + (array[0x3d] * 0x100) + (array[0x3e] * 0x10000) + (array[0x3f] * 0x1000000);
+                // if it has MZ and PE marks (http://www.phreedom.org/research/tinype/)
+                peSign = (array[peLocation] << 24) + (array[peLocation + 1] << 16) + (array[peLocation + 2] << 8) + (array[peLocation + 3]);
             }
-            else{
-                document.getElementById('ctype').innerText = "Not interested";
+            //console.log(peSign.toString(16));
+            if (isBigEnough && mzSign == 0x4d5a && peSign == 0x50450000) {
+                document.getElementById('ctype').innerText = "File is PE";
+                document.getElementById('btnSubmit').disabled = false;
+            }
+            else {
+                document.getElementById('ctype').innerText = "Not a PE";
+                document.getElementById('btnSubmit').disabled = true;
             }
         };
         reader.readAsArrayBuffer(this.files[0]);
     }, false);
 
-    document.getElementById('fileUploadForm').addEventListener('submit', function() {
-
+    document.getElementById('fileUploadForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        console.log("File has been sent");
     }, false);
 }

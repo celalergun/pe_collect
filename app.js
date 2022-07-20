@@ -5,6 +5,7 @@ const fs = require('fs');
 const multer = require('multer');
 const upload = multer({ preservePath: true });
 const fileutils = require('./fileutils');
+const dbutils = require('./dbutils');
 
 var app = express();
 app.use(express.static(path.join(process.cwd(), '/public')));
@@ -37,7 +38,7 @@ app.get('/', (req, res) => {
 app.post('/hash', (req, res) => {
     const hash = req.body.hash;
     let fileName = path.join(process.cwd(), 'storage', hash + '.sample');
-    var val = isHashInDb(hash);
+    var val = dbutils.isHashInDb(hash);
     if (val) {
         res.status(200).send(
             {
@@ -67,26 +68,21 @@ app.post('/upload', upload.single('sample'), function (req, res, next) {
         return;
     }
 
-    let { isPE, hexHash } = checkBuffer(req.file.buffer);
+    let { isPE, hexHash } = fileutils.checkBuffer(req.file.buffer);
     if (!isPE) {
         res.status(403).send('Invalid data');
         res.end();
         return;
     }
 
-    if (hexHash !== hash || isHashInDb(hash)) {
+    if (hexHash !== hash || dbutils.isHashInDb(hash)) {
         res.status(403).send('Invalid data');
         res.end();
         return;
     }
 
     fs.writeFileSync(physicalFileName, req.file.buffer);
-    const db = require('better-sqlite3')('./database/pe_metadata.db3', { verbose: console.log });
-    var s = 'insert into "meta_data" (hash, filename, filesize, directory) values (?, ?, ?, ?);';
-    var query = db.prepare(s);
-    var result = query.run(hash, fileName, fileSize, directory);
-    console.log(result);
-    db.close();
+    dbutils.insertHash(hash, fileName, fileSize, directory);
     res.status(200).redirect('/');
     res.end();
 });
@@ -103,13 +99,5 @@ app.get("*", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running at: http://127.0.0.1:${PORT}`);
 });
-
-function isHashInDb(hash) {
-    const localDb = require('better-sqlite3')('./database/pe_metadata.db3', { verbose: console.log });
-    var query = localDb.prepare('select id from meta_data where hash = ?').bind(hash);
-    const val = query.get();
-    localDb.close();
-    return val;
-}
 
 module.exports = app;

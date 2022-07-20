@@ -11,24 +11,8 @@ app.use(express.static(path.join(process.cwd(), '/public')));
 const PORT = 3003;
 
 // check if the directories exist
-fs.mkdir(path.join(__dirname,'storage'), 0o744, function(err) {
-    if (err.code == 'EEXIST')
-    {
-        console.log('Directory "storage" exists' );
-        return;
-    }
-        
-    if (err) throw err;
-});
-fs.mkdir(path.join(__dirname,'/database'), 0o744, function(err) {
-    if (err.code == 'EEXIST')
-    {
-        console.log('Directory "database" exists' );
-        return;
-    }
-
-    if (err) throw err;
-});
+checkDirectory('storage');
+checkDirectory('database');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
@@ -148,6 +132,18 @@ function checkBuffer(buffer) {
     // if it has MZ and PE marks (http://www.phreedom.org/research/tinype/)
     var isPE = isBigEnough && mzSign == 0x4d5a && peSign == 0x50450000;
     return { isPE, hexHash };
+}
+
+function checkDirectory(dirName){
+    fs.mkdir(path.join(__dirname, dirName), 0o744, function(err) {
+        if (err.code == 'EEXIST')
+        {
+            console.log(`Directory "${dirName}" exists`);
+            return;
+        }
+            
+        if (err) throw err;
+    });    
 }
 
 module.exports = app;

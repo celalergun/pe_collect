@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 function checkDirectory(dirName){
     fs.mkdir(path.join(__dirname, dirName), 0o744, function(err) {
-        if (err.code == 'EEXIST')
+        if ((err != null) && (err.code == 'EEXIST'))
         {
             console.log(`Directory "${dirName}" exists`);
             return;

@@ -8,8 +8,27 @@ const upload = multer({ preservePath: true });
 
 var app = express();
 app.use(express.static(path.join(process.cwd(), '/public')));
-//app.use(express.json);
 const PORT = 3003;
+
+// check if the directories exist
+fs.mkdir(path.join(__dirname,'storage'), 0o744, function(err) {
+    if (err.code == 'EEXIST')
+    {
+        console.log('Directory "storage" exists' );
+        return;
+    }
+        
+    if (err) throw err;
+});
+fs.mkdir(path.join(__dirname,'/database'), 0o744, function(err) {
+    if (err.code == 'EEXIST')
+    {
+        console.log('Directory "database" exists' );
+        return;
+    }
+
+    if (err) throw err;
+});
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
@@ -20,6 +39,7 @@ db.exec('Create Table If Not Exists meta_data(id integer primary key autoincreme
 db.exec('Create Unique Index If Not Exists ByHash on meta_data(hash);');
 db.close();
 
+// here we serve the file "index.html" 
 app.get('/', (req, res) => {
     res.setHeader('Content-type', 'text/html');
     indexFile = fs.readFileSync(path.join(process.cwd(), 'index.html'));
@@ -29,6 +49,7 @@ app.get('/', (req, res) => {
     res.end();
 });
 
+// if client posts data using our "hash" method, we get it here
 app.post('/hash', (req, res) => {
     const hash = req.body.hash;
     let fileName = path.join(process.cwd(), 'storage', hash + '.sample');

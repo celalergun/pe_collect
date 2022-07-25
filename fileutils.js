@@ -22,7 +22,7 @@ function checkBuffer(buffer) {
     var mzSign = 0;
     var peSign = 0;
     // we check here:
-    // if the file is bigger than 130 bytes
+    // if the file is bigger than 130 bytes (http://www.phreedom.org/research/tinype/)
     var isBigEnough = array.length > 130;
     if (isBigEnough) {
         // if it is starting with 'MZ' (Mark Zbikowski) 
@@ -31,7 +31,7 @@ function checkBuffer(buffer) {
         peSign = (array[peLocation] << 24) + (array[peLocation + 1] << 16) + (array[peLocation + 2] << 8) + (array[peLocation + 3]);
     }
     //console.log(peSign.toString(16));
-    // if it has MZ and PE marks (http://www.phreedom.org/research/tinype/)
+    // if it has MZ and PE marks 
     var isPE = isBigEnough && mzSign == 0x4d5a && peSign == 0x50450000;
     return { isPE, hexHash };
 }

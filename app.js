@@ -38,20 +38,18 @@ app.get('/', (req, res) => {
 app.post('/hash', (req, res) => {
     const hash = req.body.hash;
     let fileName = path.join(process.cwd(), 'storage', hash + '.sample');
-    var val = dbutils.isHashInDb(hash);
+    let val = dbutils.isHashInDb(hash);
     if (val) {
-        res.status(200).send(
-            {
-                exists: true,
-                status: "You don't need to send this file"
-            });
+        res.status(200).send({
+            exists: true,
+            status: "You don't need to send this file"
+        });
 
     } else {
-        res.status(200).send(
-            {
-                exists: false,
-                status: "Ready to send"
-            });
+        res.status(200).send({
+            exists: false,
+            status: "Ready to send"
+        });
 
     }
 });
